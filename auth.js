@@ -1,103 +1,160 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import passport from "./googleAuth.js"; // ✅ FIXED
+import passport from "./googleAuth.js";
+
 import User from "./models/User.js";
 
 const router = express.Router();
 
+/* ===============================
+   TOKEN GENERATOR
+================================ */
+
 function generateToken(user) {
-  return jwt.sign(
-    { id: user._id },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
+
+  return jwt.sign({
+
+    id: user._id
+
+  },
+
+  process.env.JWT_SECRET,
+
+  {
+
+    expiresIn: "7d"
+
+  });
+
 }
 
-/* REGISTER */
+/* ===============================
+   REGISTER
+================================ */
+
 router.post("/register", async (req, res) => {
 
   try {
 
-    const { name, email, password } = req.body;
+    const { name, email, password }
+      = req.body;
 
-    const exists = await User.findOne({ email });
+    const exists =
+      await User.findOne({ email });
 
     if (exists)
-      return res.status(400).json({ error: "User exists" });
+      return res.status(400)
+        .json({ error: "User exists" });
 
-    const hash = await bcrypt.hash(password, 10);
+    const hash =
+      await bcrypt.hash(password, 10);
 
-    const user = await User.create({
-      name,
-      email,
-      password: hash
-    });
+    const user =
+      await User.create({
 
-    const token = generateToken(user);
+        name,
+        email,
+        password: hash
+
+      });
+
+    const token =
+      generateToken(user);
 
     res.json({ token });
 
-  } catch (err) {
+  }
 
-    res.status(500).json({ error: err.message });
+  catch (err) {
+
+    res.status(500)
+      .json({ error: err.message });
 
   }
 
 });
 
-/* LOGIN */
+/* ===============================
+   LOGIN
+================================ */
+
 router.post("/login", async (req, res) => {
 
   try {
 
-    const { email, password } = req.body;
+    const { email, password }
+      = req.body;
 
-    const user = await User.findOne({ email });
+    const user =
+      await User.findOne({ email });
 
     if (!user)
-      return res.status(400).json({ error: "User not found" });
+      return res.status(400)
+        .json({ error: "User not found" });
 
-    const match = await bcrypt.compare(password, user.password);
+    const match =
+      await bcrypt.compare(
+        password,
+        user.password
+      );
 
     if (!match)
-      return res.status(400).json({ error: "Invalid password" });
+      return res.status(400)
+        .json({ error: "Wrong password" });
 
-    const token = generateToken(user);
+    const token =
+      generateToken(user);
 
     res.json({ token });
 
-  } catch (err) {
+  }
 
-    res.status(500).json({ error: err.message });
+  catch (err) {
+
+    res.status(500)
+      .json({ error: err.message });
 
   }
 
 });
 
-/* GOOGLE LOGIN */
+/* ===============================
+   GOOGLE LOGIN
+================================ */
+
 router.get("/google",
+
   passport.authenticate("google", {
+
     scope: ["profile", "email"],
     session: false
+
   })
+
 );
 
-/* GOOGLE CALLBACK */
 router.get("/google/callback",
+
   passport.authenticate("google", {
-    session: false,
-    failureRedirect: "/auth/login"
+
+    session: false
+
   }),
+
   (req, res) => {
 
-    const token = generateToken(req.user);
+    const token =
+      generateToken(req.user);
 
     res.redirect(
+
       `https://${process.env.EXTENSION_ID}.chromiumapp.org/?token=${token}`
+
     );
 
   }
+
 );
 
 export default router;

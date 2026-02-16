@@ -10,36 +10,43 @@ dotenv.config();
 
 const app = express();
 
+/* ===============================
+   MIDDLEWARE
+================================ */
+
 app.use(cors());
 app.use(express.json());
 app.use(passport.initialize());
 
 /* ===============================
-   MONGODB CONNECT
-================================= */
+   DATABASE CONNECTION (Railway)
+================================ */
 
 mongoose.connect(process.env.MONGODB_URI)
 .then(() => console.log("MongoDB connected"))
-.catch(err => console.log(err));
+.catch(err => console.log("MongoDB error:", err));
 
 /* ===============================
    ROUTES
-================================= */
+================================ */
 
 app.use("/auth", authRoutes);
 
 /* ===============================
-   STREAMING ASK ROUTE
-================================= */
+   STREAM AI RESPONSE
+================================ */
 
 app.post("/ask-stream", async (req, res) => {
 
   res.setHeader("Content-Type", "text/plain");
   res.setHeader("Transfer-Encoding", "chunked");
 
-  const text = "This is a streaming AI response example.";
+  const { question } = req.body;
 
-  for (let char of text) {
+  const answer =
+    "This is Railway streaming response for: " + question;
+
+  for (let char of answer) {
 
     res.write(char);
 
@@ -52,9 +59,13 @@ app.post("/ask-stream", async (req, res) => {
 });
 
 /* ===============================
-   START SERVER
-================================= */
+   START SERVER (Railway)
+================================ */
 
-app.listen(5000, () => {
-  console.log("Server running on 5000");
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+
+  console.log("Server running on port", PORT);
+
 });

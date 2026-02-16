@@ -13,6 +13,10 @@ const userSchema = new mongoose.Schema({
 
   googleId: String
 
+}, {
+
+  timestamps: true
+
 });
 
 export default mongoose.model("User", userSchema);
