@@ -9,13 +9,7 @@ const userSchema = new mongoose.Schema({
     unique: true
   },
 
-  password: String,
-
-  googleId: String
-
-}, {
-
-  timestamps: true
+  password: String
 
 });
 
