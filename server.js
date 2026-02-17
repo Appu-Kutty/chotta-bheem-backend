@@ -1,96 +1,71 @@
+
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+import passport from "passport";
 
 import authRoutes from "./auth.js";
-import passport from "./googleAuth.js";
+import "./googleAuth.js";
 
 dotenv.config();
 
 const app = express();
 
-/* =========================
-   REQUIRED FOR RAILWAY
-========================= */
-
-const PORT = process.env.PORT || 5000;
-
-/* =========================
-   MIDDLEWARE
-========================= */
-
-app.use(cors({
-  origin: "*"
-}));
-
+app.use(cors({ origin: "*", credentials: true }));
 app.use(express.json());
-
 app.use(passport.initialize());
 
-/* =========================
-   MONGODB CONNECT
-========================= */
+const connectDB = async () => {
+  try {
+    const mongoURI =
+      process.env.MONGO_URL ||
+      process.env.MONGODB_URI ||
+      "";
 
-mongoose.connect(process.env.MONGODB_URI)
-.then(() => console.log("MongoDB connected"))
-.catch(err => {
-  console.error("MongoDB connection error:", err.message);
-});
+    if (!mongoURI) {
+      console.error("❌ No MongoDB URI provided");
+      process.exit(1);
+    }
 
-/* =========================
-   HEALTH CHECK ROUTE
-========================= */
+    await mongoose.connect(mongoURI, {
+      autoIndex: true,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+
+    console.log("✅ MongoDB Connected");
+
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err.message);
+    setTimeout(connectDB, 5000);
+  }
+};
+
+connectDB();
 
 app.get("/", (req, res) => {
-  res.send("Backend is running");
+  res.send("Chotta Bheem Backend Running");
 });
-
-/* =========================
-   AUTH ROUTES
-========================= */
 
 app.use("/auth", authRoutes);
 
-/* =========================
-   STREAM ROUTE
-========================= */
-
 app.post("/ask-stream", async (req, res) => {
+  res.setHeader("Content-Type", "text/plain");
+  res.setHeader("Transfer-Encoding", "chunked");
 
-  try {
+  const text = "Railway deployment successful. AI backend streaming response working.";
 
-    res.setHeader("Content-Type", "text/plain");
-    res.setHeader("Transfer-Encoding", "chunked");
-
-    const text = "Hello! Your Railway backend is working perfectly.";
-
-    for (let char of text) {
-
-      res.write(char);
-
-      await new Promise(r => setTimeout(r, 20));
-
-    }
-
-    res.end();
-
-  } catch (err) {
-
-    console.error(err);
-
-    res.status(500).send("Error");
-
+  for (let char of text) {
+    res.write(char);
+    await new Promise(r => setTimeout(r, 15));
   }
 
+  res.end();
 });
 
-/* =========================
-   START SERVER
-========================= */
+const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
-
-  console.log(`Server running on port ${PORT}`);
-
+  console.log(`🚀 Server running on port ${PORT}`);
 });
